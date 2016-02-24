@@ -10,9 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
+
 
 class KafkaRequires(RelationBase):
     scope = scopes.UNIT
@@ -25,24 +27,33 @@ class KafkaRequires(RelationBase):
     @hook('{requires:kafka}-relation-changed')
     def changed(self):
         conv = self.conversation()
-        if self.get_kafka_port() and self.get_kafka_ip():
+        if self.kafkas() and self.zookeepers():
             conv.set_state('{relation_name}.available')
 
-    @hook('{requires:kafka}-relation-{departed}')
+    @hook('{requires:kafka}-relation-departed')
     def departed(self):
         conv = self.conversation()
         conv.remove_state('{relation_name}.connected')
         conv.remove_state('{relation_name}.available')
 
-    def get_kafka_port(self):
-        if not self.conversations():
-            raise Exception("No remote port set.")
+    def kafkas(self):
+        kafkas = []
+        for conv in self.conversations():
+            port = conv.get_remote('port')
+            if port:
+                kafkas.append({
+                    'host': conv.get_remote('private-address'),
+                    'port': port
+                })
+        return kafkas
 
-        return self.conversations()[0].get_remote('port')
-
-    def get_kafka_ip(self):
-        if not self.conversations():
-            raise Exception("No remote endpoint set.")
-
-        return self.conversations()[0].get_remote('private-address')
-
+    def zookeepers(self):
+        zookeepers = []
+        for conv in self.conversations():
+            zks = json.loads(conv.get_remote('zookeepers', '[]'))
+            for host, port in zks:
+                zookeepers.append({
+                    'host': host,
+                    'port': port
+                })
+        return zookeepers

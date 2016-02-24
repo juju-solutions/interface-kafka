@@ -16,7 +16,8 @@ This interface layer will set the following states, as appropriate:
   * `{relation_name}.connected`   The relation to a client has been
     established, though the service may not be available yet. At this point the
     provider should broadcast the connection properties using:
-      * `send_configuration(self, port)`
+      * `send_port(self, port)`
+      * `send_zookeepers(self, zk_host_port_pair_list)`
 
   * `{relation_name}.available`   The connection to the client is now available and correctly setup.
 
@@ -25,10 +26,8 @@ As soon an client get connected the Apache Kafka charm provides the connection d
 
 ```python
 @when('kafka.connected')
-@when_not('kafka.available')
-def waiting_availuable_kafka_client(kafka):
-    kafka.send_configuration(hookenv.config()['source_port'])
-    hookenv.status_set('waiting', 'Waiting for a client to become available')
+def waiting_available_kafka_client(kafka):
+    kafka.send_port(hookenv.config()['source_port'])
 ```
 
 ## Requires
@@ -42,8 +41,8 @@ This interface layer will set the following states, as appropriate:
 
   * `{relation_name}.available` The connection has been established, and the client charm
     can get the connection details via the following calls:
-      * `get_kafka_ip()`
-      * `get_kafka_port()`
+      * `kafkas()`
+      * `zookeepers()`
     In case of an error a generic exception is thrown.
 
 Example:
@@ -58,8 +57,8 @@ def waiting_for_kafka_available(kafka):
 @when('kafka.available')
 @when_not('service.started')
 def configure_kafka(kafka):
-    port = kafka.get_kafka_port()
-    ip = kafka.get_kafka_ip()
+    for kafka_unit in kafka.kafkas():
+        service.add_kafka(kafka_unit['host'], kafka_unit['port'])
 ```
 
 

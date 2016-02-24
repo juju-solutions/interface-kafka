@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
@@ -18,7 +19,6 @@ from charms.reactive import scopes
 class KafkaProvides(RelationBase):
     # Every unit connecting will get the same information
     scope = scopes.GLOBAL
-    relation_name = 'kafka'
 
     # Use some template magic to declare our relation(s)
     @hook('{provides:kafka}-relation-joined')
@@ -37,9 +37,15 @@ class KafkaProvides(RelationBase):
     # call this method when passed into methods decorated with
     # @when('{relation}.available')
     # to configure the relation data
-    def send_configuration(self, port):
-        
+    def send_port(self, port):
         conv = self.conversation()
-        conv.set_remote(data = {
-            'port': port,
-        })
+        conv.set_remote('port', port)
+
+    def send_zookeepers(self, zookeepers):
+        """
+        Forward ZK connection info to clients.
+
+        :param list zookeepers: List of ZK `(host, port)` tuples.
+        """
+        conv = self.conversation()
+        conv.set_remote('zookeepers', json.dumps(zookeepers))
