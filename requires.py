@@ -22,19 +22,19 @@ class KafkaRequires(RelationBase):
     @hook('{requires:kafka}-relation-joined')
     def joined(self):
         conv = self.conversation()
-        conv.set_state('{relation_name}.connected')
+        conv.set_state('{relation_name}.joined')
 
     @hook('{requires:kafka}-relation-changed')
     def changed(self):
         conv = self.conversation()
         if self.kafkas() and self.zookeepers():
-            conv.set_state('{relation_name}.available')
+            conv.set_state('{relation_name}.ready')
 
     @hook('{requires:kafka}-relation-departed')
     def departed(self):
         conv = self.conversation()
-        conv.remove_state('{relation_name}.connected')
-        conv.remove_state('{relation_name}.available')
+        conv.remove_state('{relation_name}.ready')
+        conv.remove_state('{relation_name}.joined')
 
     def kafkas(self):
         kafkas = []

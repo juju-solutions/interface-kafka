@@ -1,64 +1,68 @@
 # Overview
 
-This interface layer handles the communication between the Kafka and its clients.
-The provider end of the relation provides the Kafka service.
-The other end requires the existence of the provider to function.
+This interface layer handles the communication between Kafka and its
+clients. The provider part of this interface provides the Kafka service.
+The consumer part requires the existence of a provider to function.
 
 
 # Usage
 
 ## Provides
 
-Charms providing the Apache Kafka service can make use of the provides interface.
+Charms providing the Apache Kafka service *provide* this interface. This
+interface layer will set the following states, as appropriate:
 
-This interface layer will set the following states, as appropriate:
+  * `{relation_name}.joined` The provider has been related to a client,
+  though the client service may not be available yet. At this point, the
+  provider should broadcast Kafka configuration details using:
 
-  * `{relation_name}.connected`   The relation to a client has been
-    established, though the service may not be available yet. At this point the
-    provider should broadcast the connection properties using:
-      * `send_port(self, port)`
-      * `send_zookeepers(self, zk_host_port_pair_list)`
-
-  * `{relation_name}.available`   The connection to the client is now available and correctly setup.
+    * `send_port(self, port)`
+    * `send_zookeepers(self, zk_host_port_pair_list)`
 
 
-As soon an client get connected the Apache Kafka charm provides the connection details (port):
+  * `{relation_name}.ready`  Kafka configuration details have been sent. The
+  provider and client should now be able to communicate.
+
+
+Kafka provider example:
 
 ```python
-@when('kafka.connected')
-def waiting_available_kafka_client(kafka):
-    kafka.send_port(hookenv.config()['source_port'])
+@when('client.joined', 'zookeeper.ready')
+def serve_client(client, zookeeper):
+    client.send_port(get_kafka_port())
+    client.send_zookeepers(zookeeper.get_zookeeper_units())
 ```
 
 ## Requires
 
-A client makes use of the requires part of the interface to connect to Apache Kafka.
+Clients *require* this interface to connect to Apache Kafka. This interface
+layer will set the following states, as appropriate:
 
-This interface layer will set the following states, as appropriate:
+  * `{relation_name}.joined` The client charm has been related to a Kafka
+  provider. At this point, the charm waits for Kafka configuration details.
 
-  * `{relation_name}.connected` The charm has connected to the Kafka. 
-    At this point the requires intrface waits for connection details (port).
+  * `{relation_name}.ready`  Kafka is now ready for clients. The client
+  charm should get Kafka configuration details using:
 
-  * `{relation_name}.available` The connection has been established, and the client charm
-    can get the connection details via the following calls:
-      * `kafkas()`
-      * `zookeepers()`
-    In case of an error a generic exception is thrown.
+    * `kafkas()`
+    * `zookeepers()`
 
-Example:
+
+Kafka client example:
 
 ```python
-@when('kafka.connected')
-@when_not('kafka.available')
-def waiting_for_kafka_available(kafka):
-    hookenv.status_set('waiting', 'Waiting for availability of Kafka')
+@when('kafka.joined')
+@when_not('kafka.ready')
+def wait_for_kafka(kafka):
+    hookenv.status_set('waiting', 'Waiting for Kafka to become ready')
 
 
-@when('kafka.available')
-@when_not('service.started')
-def configure_kafka(kafka):
+@when('kafka.ready')
+@when_not('myservice.configured')
+def configure(kafka):
     for kafka_unit in kafka.kafkas():
-        service.add_kafka(kafka_unit['host'], kafka_unit['port'])
+        add_kafka(kafka_unit['host'], kafka_unit['port'])
+    set_state('myservice.configured')
 ```
 
 
