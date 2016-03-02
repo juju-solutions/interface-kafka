@@ -30,7 +30,7 @@ Kafka provider example:
 @when('client.joined', 'zookeeper.ready')
 def serve_client(client, zookeeper):
     client.send_port(get_kafka_port())
-    client.send_zookeepers(zookeeper.get_zookeeper_units())
+    client.send_zookeepers(zookeeper.zookeepers())
 ```
 
 ## Requires

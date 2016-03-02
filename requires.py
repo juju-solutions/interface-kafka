@@ -29,6 +29,8 @@ class KafkaRequires(RelationBase):
         conv = self.conversation()
         if self.kafkas() and self.zookeepers():
             conv.set_state('{relation_name}.ready')
+        else:
+            conv.remove_state('{relation_name}.ready')
 
     @hook('{requires:kafka}-relation-departed')
     def departed(self):
