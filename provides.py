@@ -23,16 +23,16 @@ class KafkaProvides(RelationBase):
     # Use some template magic to declare our relation(s)
     @hook('{provides:kafka}-relation-joined')
     def joined(self):
-        self.set_state('{relation_name}.connected')
+        self.set_state('{relation_name}.joined')
 
     @hook('{provides:kafka}-relation-changed')
     def changed(self):
-        self.set_state('{relation_name}.available')
+        self.set_state('{relation_name}.ready')
 
     @hook('{provides:kafka}-relation-departed')
-    def broken(self):
-        self.remove_state('{relation_name}.available')
-        self.remove_state('{relation_name}.connected')
+    def departed(self):
+        self.remove_state('{relation_name}.ready')
+        self.remove_state('{relation_name}.joined')
 
     # call this method when passed into methods decorated with
     # @when('{relation}.available')
