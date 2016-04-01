@@ -50,12 +50,19 @@ class KafkaRequires(RelationBase):
         return kafkas
 
     def zookeepers(self):
+        """
+        Returns Zookeeper connection info
+
+        :returns: List of ZK entry dicts.  Each dict will
+            contain a ``host``, ``port``, and ``rest_port`` key.
+        """
         zookeepers = []
         for conv in self.conversations():
             zks = json.loads(conv.get_remote('zookeepers', '[]'))
-            for host, port in zks:
+            for zk in zks:
                 zookeepers.append({
-                    'host': host,
-                    'port': port
+                    'host': zk['host'],
+                    'port': zk['port'],
+                    'rest_port': zk['rest_port'],
                 })
         return zookeepers
