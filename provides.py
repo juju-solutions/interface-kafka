@@ -45,7 +45,12 @@ class KafkaProvides(RelationBase):
         """
         Forward ZK connection info to clients.
 
-        :param list zookeepers: List of ZK `(host, port)` tuples.
+        :param list zookeepers: List of ZK entry dicts.  Each dict should
+            contain a ``host``, ``port``, and ``rest_port`` key.
         """
+        required_keys = {'host', 'port', 'rest_port'}
         conv = self.conversation()
+        for zk in zookeepers:
+            if not isinstance(zk, dict) or required_keys - set(zk.keys()):
+                raise ValueError('Invalid Zookeeper entry: {}'.format(zk))
         conv.set_remote('zookeepers', json.dumps(zookeepers))
