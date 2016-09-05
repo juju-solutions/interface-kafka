@@ -42,9 +42,11 @@ class KafkaRequires(RelationBase):
         kafkas = []
         for conv in self.conversations():
             port = conv.get_remote('port')
+            host = conv.get_remote('host') or conv.get_remote(
+                'private-address')
             if port:
                 kafkas.append({
-                    'host': conv.get_remote('private-address'),
+                    'host': host,
                     'port': port
                 })
         return kafkas

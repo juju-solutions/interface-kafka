@@ -37,9 +37,12 @@ class KafkaProvides(RelationBase):
     # call this method when passed into methods decorated with
     # @when('{relation}.available')
     # to configure the relation data
-    def send_port(self, port):
+    def send_connection(self, port, host=None):
         conv = self.conversation()
         conv.set_remote('port', port)
+        conv.set_remote('host', host)
+
+    send_port = send_connection
 
     def send_zookeepers(self, zookeepers):
         """
